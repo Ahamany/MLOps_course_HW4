@@ -38,10 +38,20 @@ def test_train_epoch_updates_weights_and_rejects_empty_loader():
         evaluate_model(model, empty)
 
 
-@pytest.mark.parametrize("kwargs", [{"epochs": 0}, {"batch_size": 0}, {"learning_rate": 0},
-                                   {"learning_rate": float("nan")}, {"seed": -1},
-                                   {"valid_fraction": 1}, {"embed_dim": 3}, {"num_heads": 0},
-                                   {"num_classes": 1}])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"epochs": 0},
+        {"batch_size": 0},
+        {"learning_rate": 0},
+        {"learning_rate": float("nan")},
+        {"seed": -1},
+        {"valid_fraction": 1},
+        {"embed_dim": 3},
+        {"num_heads": 0},
+        {"num_classes": 1},
+    ],
+)
 def test_training_config_rejects_invalid_values(kwargs):
     with pytest.raises(ValueError):
         TrainConfig(**kwargs)

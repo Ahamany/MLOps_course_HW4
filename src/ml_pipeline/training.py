@@ -107,8 +107,14 @@ def run_training(dataset: TableDataset, config: TrainConfig | None = None) -> Tr
     for epoch in range(1, config.epochs + 1):
         train_loss = train_epoch(model, split.train, optimizer)
         valid = evaluate_model(model, split.valid)
-        history.append({"epoch": epoch, "train_loss": train_loss,
-                        "valid_loss": valid["loss"], "valid_accuracy": valid["accuracy"]})
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "valid_loss": valid["loss"],
+                "valid_accuracy": valid["accuracy"],
+            }
+        )
     model.eval()
     return TrainingResult(model, split.scaler, config, history, initial_loss)
 
@@ -125,23 +131,28 @@ def predict(result: TrainingResult, features) -> torch.Tensor:
 def evaluate(result: TrainingResult, dataset: TableDataset) -> dict[str, float]:
     _validate_classes(dataset, result.config)
     normalized = result.scaler.transform(dataset.features)
-    loader = DataLoader(TensorDataset(normalized, dataset.labels), batch_size=result.config.batch_size)
+    loader = DataLoader(
+        TensorDataset(normalized, dataset.labels), batch_size=result.config.batch_size
+    )
     return evaluate_model(result.model, loader)
 
 
 def save_checkpoint(result: TrainingResult, path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({
-        "format_version": 1,
-        "num_features": result.model.num_features,
-        "config": asdict(result.config),
-        "model_state": result.model.state_dict(),
-        "scaler_mean": result.scaler.mean,
-        "scaler_scale": result.scaler.scale,
-        "history": result.history,
-        "initial_loss": result.initial_loss,
-    }, path)
+    torch.save(
+        {
+            "format_version": 1,
+            "num_features": result.model.num_features,
+            "config": asdict(result.config),
+            "model_state": result.model.state_dict(),
+            "scaler_mean": result.scaler.mean,
+            "scaler_scale": result.scaler.scale,
+            "history": result.history,
+            "initial_loss": result.initial_loss,
+        },
+        path,
+    )
 
 
 def load_checkpoint(path: str | Path) -> TrainingResult:
@@ -155,6 +166,9 @@ def load_checkpoint(path: str | Path) -> TrainingResult:
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
     return TrainingResult(
-        model, Standardizer(checkpoint["scaler_mean"], checkpoint["scaler_scale"]),
-        config, checkpoint["history"], checkpoint["initial_loss"],
+        model,
+        Standardizer(checkpoint["scaler_mean"], checkpoint["scaler_scale"]),
+        config,
+        checkpoint["history"],
+        checkpoint["initial_loss"],
     )

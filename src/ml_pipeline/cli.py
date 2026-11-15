@@ -7,7 +7,13 @@ from pathlib import Path
 import torch
 
 from ml_pipeline.data import TableDataset, make_classification
-from ml_pipeline.training import TrainConfig, evaluate, load_checkpoint, run_training, save_checkpoint
+from ml_pipeline.training import (
+    TrainConfig,
+    evaluate,
+    load_checkpoint,
+    run_training,
+    save_checkpoint,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,15 +36,23 @@ def main(argv: list[str] | None = None) -> int:
     torch.set_num_threads(1)
     try:
         if args.command == "train":
-            config = TrainConfig(epochs=args.epochs, batch_size=args.batch_size,
-                                 learning_rate=args.learning_rate, seed=args.seed)
-            dataset = (TableDataset.from_csv(args.csv, args.target) if args.csv else
-                       make_classification(args.samples, args.features, args.seed))
+            config = TrainConfig(
+                epochs=args.epochs,
+                batch_size=args.batch_size,
+                learning_rate=args.learning_rate,
+                seed=args.seed,
+            )
+            dataset = (
+                TableDataset.from_csv(args.csv, args.target)
+                if args.csv
+                else make_classification(args.samples, args.features, args.seed)
+            )
             result = run_training(dataset, config)
             checkpoint_path = args.output / "model.pt"
             save_checkpoint(result, checkpoint_path)
             metrics = {
-                "checkpoint": str(checkpoint_path), "initial_loss": result.initial_loss,
+                "checkpoint": str(checkpoint_path),
+                "initial_loss": result.initial_loss,
                 "final_loss": result.history[-1]["valid_loss"],
                 "accuracy": result.history[-1]["valid_accuracy"],
             }
@@ -50,8 +64,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             result = load_checkpoint(args.checkpoint)
-            dataset = (TableDataset.from_csv(args.csv, args.target) if args.csv else
-                       make_classification(args.samples, result.model.num_features, args.seed))
+            dataset = (
+                TableDataset.from_csv(args.csv, args.target)
+                if args.csv
+                else make_classification(args.samples, result.model.num_features, args.seed)
+            )
             metrics = evaluate(result, dataset)
     except (ValueError, OSError, RuntimeError) as exc:
         parser.error(str(exc))
