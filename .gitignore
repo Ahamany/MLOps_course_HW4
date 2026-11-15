@@ -1,0 +1,47 @@
+# Local references and agent configuration
+пример/
+.codex/
+.agents/
+.aws/
+AGENTS.md
+CODEX.md
+
+# Python environments, bytecode, tooling caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+.uv-cache/
+
+# Test reports and generated ML artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+junit*.xml
+artifacts/
+runs/
+data/
+*.pt
+*.pth
+*.onnx
+
+# Credentials, editors and OS files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+*.swp
