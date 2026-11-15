@@ -1,23 +1,35 @@
-[build-system]
-requires = ["setuptools>=75"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "hw4-ml-pipeline"
-version = "1.0.0"
+name = "ml-pipeline"
+version = "0.1.0"
 description = "A tested CPU pipeline for tabular classification with logarithmic attention"
 readme = "README.md"
+authors = [
+    { name = "Ahamany", email = "yangalinismail@gmail.com" }
+]
 requires-python = ">=3.12,<3.14"
-dependencies = ["numpy>=2,<3", "torch>=2.6,<3"]
+dependencies = [
+    "numpy>=2,<3",
+    "torch>=2.6,<3",
+]
 
 [project.scripts]
 ml-pipeline = "ml_pipeline.cli:main"
 
-[dependency-groups]
-dev = ["hypothesis>=6,<7", "pytest>=8,<10", "pytest-cov>=7,<8", "ruff>=0.11,<1"]
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[dependency-groups]
+dev = [
+    "hypothesis>=6,<7",
+    "pytest>=8,<10",
+    "pytest-cov>=7,<8",
+    "ruff>=0.11,<1",
+]
+
+[tool.uv.build-backend]
+module-name = "ml_pipeline"
+module-root = "src"
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
@@ -28,8 +40,10 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.pytest.ini_options]
+minversion = "8.0"
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config -ra"
+xfail_strict = true
 markers = [
     "unit: isolated contracts of blocks, datasets, model and training",
     "integration: interactions between real pipeline components",
