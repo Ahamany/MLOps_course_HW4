@@ -106,6 +106,21 @@ uv run --locked ruff format --check .
 `make train`, `make evaluate`. CI запускает lint, форматирование и полный набор тестов
 с покрытием на Python 3.12 и 3.13.
 
+### Результат локальной проверки
+
+Проверено 15.11.2026 на Python 3.12.3 и PyTorch 2.15.0+cpu:
+
+- **73 passed**: 64 unit, по 2 integration/property/regression/e2e и 1 smoke;
+- покрытие строк: **334/334 (100%)**, ветвлений: **82/82 (100%)**;
+- `ruff check .` и `ruff format --check .` — успешно;
+- `uv lock --check --offline` — lock-файл соответствует конфигурации;
+- установленные команды `ml-pipeline train` и `ml-pipeline evaluate` работают без сети.
+
+При запуске демонстрации с настройками по умолчанию validation loss снизился с
+0.72195 до 0.09973, validation accuracy составила 98.04%. Оценка сохранённой модели
+в отдельном процессе на 128 новых объектах (`--seed 987`) дала accuracy 97.66%.
+Python 3.13 включён в матрицу CI; локальный прогон выполнен на Python 3.12.
+
 ## Работа с Git
 
 Используется Gitflow с отдельными коммитами для этапов:
@@ -115,7 +130,7 @@ uv run --locked ruff format --check .
 - `feature/pipeline-tests` — тесты контрактов и полного пайплайна;
 - `feature/pipeline-implementation` — компоненты и обучение;
 - `test/pipeline-validation` — проверка, исправления и автоматизация тестирования;
-- `release/1.0.0` — подготовка релиза с последующим merge в `main` и `develop`.
+- `release/1.0.0` — релиз, слитый в `main` и `develop`, с тегом `v1.0.0` на `main`.
 
 Слияния выполняются с `--no-ff`, чтобы этапы оставались видны в истории:
 
