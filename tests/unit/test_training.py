@@ -2,7 +2,15 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from ml_pipeline.training import TrainConfig, evaluate_model, train_epoch
+from ml_pipeline.data import make_classification
+from ml_pipeline.training import (
+    TrainConfig,
+    evaluate_model,
+    load_checkpoint,
+    predict,
+    run_training,
+    train_epoch,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -36,6 +44,34 @@ def test_train_epoch_updates_weights_and_rejects_empty_loader():
         train_epoch(model, empty, optimizer)
     with pytest.raises(ValueError, match="empty"):
         evaluate_model(model, empty)
+
+
+def test_train_epoch_rejects_nonfinite_loss():
+    model = torch.nn.Linear(2, 2)
+    loader = DataLoader(TensorDataset(torch.full((1, 2), float("nan")), torch.tensor([0])))
+    with pytest.raises(ValueError, match="finite"):
+        train_epoch(model, loader, torch.optim.SGD(model.parameters(), lr=0.1))
+
+
+def test_predict_rejects_nonfinite_features():
+    result = run_training(make_classification(8), TrainConfig(epochs=1))
+    with pytest.raises(ValueError, match="finite"):
+        predict(result, [[float("inf"), 0, 0, 0]])
+
+
+@pytest.mark.parametrize("content", [[], {"format_version": 1}])
+def test_load_checkpoint_rejects_incomplete_payloads(tmp_path, content):
+    path = tmp_path / "model.pt"
+    torch.save(content, path)
+    with pytest.raises(ValueError):
+        load_checkpoint(path)
+
+
+def test_load_checkpoint_rejects_corrupted_file(tmp_path):
+    path = tmp_path / "model.pt"
+    path.write_bytes(b"not a checkpoint")
+    with pytest.raises(ValueError, match="checkpoint"):
+        load_checkpoint(path)
 
 
 @pytest.mark.parametrize(

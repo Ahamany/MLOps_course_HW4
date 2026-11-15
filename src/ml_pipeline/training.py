@@ -1,6 +1,7 @@
 """Training, weighted evaluation metrics and portable CPU checkpoints."""
 
 import math
+import pickle
 import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -156,9 +157,25 @@ def save_checkpoint(result: TrainingResult, path: str | Path) -> None:
 
 
 def load_checkpoint(path: str | Path) -> TrainingResult:
-    checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    try:
+        checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    except (pickle.UnpicklingError, EOFError, RuntimeError) as exc:
+        raise ValueError("invalid checkpoint file") from exc
+    if not isinstance(checkpoint, dict):
+        raise ValueError("checkpoint must contain a dictionary")
     if checkpoint.get("format_version") != 1:
         raise ValueError("unsupported checkpoint format version")
+    required = {
+        "config",
+        "num_features",
+        "model_state",
+        "scaler_mean",
+        "scaler_scale",
+        "history",
+        "initial_loss",
+    }
+    if not required.issubset(checkpoint):
+        raise ValueError("checkpoint is missing required fields")
     config = TrainConfig(**checkpoint["config"])
     model = TabularClassifier(
         checkpoint["num_features"], config.embed_dim, config.num_heads, config.num_classes

@@ -20,6 +20,7 @@ class TableDataset(Dataset):
         if (
             not np.isfinite(labels).all()
             or (labels < 0).any()
+            or (labels >= 2**63).any()
             or (labels != np.floor(labels)).any()
         ):
             raise ValueError("labels must be finite nonnegative integers")
@@ -60,6 +61,8 @@ class Standardizer:
 
     @classmethod
     def fit(cls, features: torch.Tensor) -> "Standardizer":
+        if features.ndim != 2 or 0 in features.shape or not torch.isfinite(features).all():
+            raise ValueError("standardizer requires a nonempty finite 2D matrix")
         scale = features.std(dim=0, correction=0)
         return cls(features.mean(dim=0), torch.where(scale > 1e-6, scale, torch.ones_like(scale)))
 

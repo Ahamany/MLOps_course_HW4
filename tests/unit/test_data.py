@@ -31,6 +31,7 @@ def test_dataset_copies_inputs_and_returns_correct_tensor_types():
         ([[1]], [-1]),
         ([[1]], [0.5]),
         ([[1]], [float("nan")]),
+        ([[1]], [1e100]),
         ([[1]], [[0]]),
         ([1, 2], [0, 1]),
     ],
@@ -92,6 +93,14 @@ def test_standardizer_rejects_wrong_shape_and_loader_requires_two_samples():
         scaler.transform(torch.zeros(2, 3))
     with pytest.raises(ValueError):
         build_loaders(TableDataset([[1, 2]], [0]))
+
+
+@pytest.mark.parametrize(
+    "features", [torch.empty(0, 2), torch.zeros(2), torch.tensor([[float("nan")]])]
+)
+def test_standardizer_rejects_invalid_training_data(features):
+    with pytest.raises(ValueError):
+        Standardizer.fit(features)
 
 
 @pytest.mark.parametrize("kwargs", [{"n_samples": 1}, {"n_features": 1}, {"seed": -1}])
