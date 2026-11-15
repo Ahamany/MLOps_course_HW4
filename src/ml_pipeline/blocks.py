@@ -47,7 +47,9 @@ class LogAttention(nn.Module):
             raise ValueError("input batch sizes and key/value sequence lengths must match")
 
         def split(projection, tensor):
-            return projection(tensor).reshape(batch, -1, self.num_heads, self.head_dim).transpose(1, 2)
+            return (
+                projection(tensor).reshape(batch, -1, self.num_heads, self.head_dim).transpose(1, 2)
+            )
 
         q = split(self.q_proj, query)
         k = split(self.k_proj, key)
@@ -59,7 +61,10 @@ class LogAttention(nn.Module):
         scores = (q @ k.transpose(-2, -1)) * self.scale
         blocked = torch.zeros(batch, 1, query_length, key_length, dtype=torch.bool, device=q.device)
         if key_padding_mask is not None:
-            if key_padding_mask.dtype != torch.bool or key_padding_mask.shape != (batch, key_length):
+            if key_padding_mask.dtype != torch.bool or key_padding_mask.shape != (
+                batch,
+                key_length,
+            ):
                 raise ValueError("key_padding_mask must be boolean [batch, key_length]")
             blocked = blocked | key_padding_mask.to(q.device)[:, None, None, :]
         if attn_mask is not None:
@@ -67,14 +72,18 @@ class LogAttention(nn.Module):
                 raise ValueError("attn_mask must be boolean [query_length, key_length]")
             blocked = blocked | attn_mask.to(q.device)[None, None, :, :]
         if is_causal:
-            blocked = blocked | torch.ones(query_length, key_length, dtype=torch.bool, device=q.device).triu(1)
+            blocked = blocked | torch.ones(
+                query_length, key_length, dtype=torch.bool, device=q.device
+            ).triu(1)
         scores = scores.masked_fill(blocked, float("-inf"))
         # softmax([-inf, ...]) is NaN. Fill only fully blocked rows before softmax,
         # then explicitly zero every blocked weight, including those rows.
         scores = scores.masked_fill(blocked.all(dim=-1, keepdim=True), 0.0)
         weights = scores.softmax(dim=-1).masked_fill(blocked, 0.0)
         weights = F.dropout(weights, p=self.dropout, training=self.training)
-        output = (weights @ v).transpose(1, 2).contiguous().reshape(batch, query_length, self.embed_dim)
+        output = (
+            (weights @ v).transpose(1, 2).contiguous().reshape(batch, query_length, self.embed_dim)
+        )
         return self.out_proj(output), weights.mean(dim=1) if need_weights else None
 
 

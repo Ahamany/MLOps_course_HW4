@@ -1,0 +1,27 @@
+name: Checks
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'test/**', 'release/**', 'hotfix/**']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked
+      - run: uv run --locked ruff check .
+      - run: uv run --locked ruff format --check .
+      - run: uv run --locked pytest --cov=ml_pipeline --cov-branch --cov-report=term-missing --cov-report=xml

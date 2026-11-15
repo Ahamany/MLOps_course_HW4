@@ -33,9 +33,13 @@ def test_residual_block_backpropagates_through_every_parameter():
 
 @pytest.mark.parametrize(
     "kwargs",
-    [{"embed_dim": 0, "num_heads": 2}, {"embed_dim": 5, "num_heads": 2},
-     {"embed_dim": 4, "num_heads": 0}, {"embed_dim": 4, "num_heads": 2, "dropout": -0.1},
-     {"embed_dim": 4, "num_heads": 2, "dropout": 1.0}],
+    [
+        {"embed_dim": 0, "num_heads": 2},
+        {"embed_dim": 5, "num_heads": 2},
+        {"embed_dim": 4, "num_heads": 0},
+        {"embed_dim": 4, "num_heads": 2, "dropout": -0.1},
+        {"embed_dim": 4, "num_heads": 2, "dropout": 1.0},
+    ],
 )
 def test_attention_rejects_invalid_configuration(kwargs):
     with pytest.raises(ValueError):

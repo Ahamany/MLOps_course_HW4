@@ -17,7 +17,12 @@ class TableDataset(Dataset):
             raise ValueError("features must be a nonempty finite 2D matrix")
         if labels.ndim != 1 or len(labels) != len(features):
             raise ValueError("labels must be a vector matching the number of samples")
-        if not np.isfinite(labels).all() or (labels < 0).any() or (labels != np.floor(labels)).any():
+        if (
+            not np.isfinite(labels).all()
+            or (labels < 0).any()
+            or (labels >= 2**63).any()
+            or (labels != np.floor(labels)).any()
+        ):
             raise ValueError("labels must be finite nonnegative integers")
         self.features = torch.tensor(features, dtype=torch.float32)
         self.labels = torch.tensor(labels, dtype=torch.long)
@@ -56,6 +61,8 @@ class Standardizer:
 
     @classmethod
     def fit(cls, features: torch.Tensor) -> "Standardizer":
+        if features.ndim != 2 or 0 in features.shape or not torch.isfinite(features).all():
+            raise ValueError("standardizer requires a nonempty finite 2D matrix")
         scale = features.std(dim=0, correction=0)
         return cls(features.mean(dim=0), torch.where(scale > 1e-6, scale, torch.ones_like(scale)))
 
@@ -87,15 +94,24 @@ def build_loaders(
     scaler = Standardizer.fit(dataset.features[train_indices])
 
     def subset_loader(selected, shuffle):
-        subset = TableDataset(scaler.transform(dataset.features[selected]), dataset.labels[selected])
+        subset = TableDataset(
+            scaler.transform(dataset.features[selected]), dataset.labels[selected]
+        )
         return DataLoader(
-            subset, batch_size=batch_size, shuffle=shuffle, drop_last=False,
-            generator=torch.Generator().manual_seed(seed), num_workers=0,
+            subset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=False,
+            generator=torch.Generator().manual_seed(seed),
+            num_workers=0,
         )
 
     return DataSplit(
-        subset_loader(train_indices, True), subset_loader(valid_indices, False),
-        scaler, train_indices, valid_indices,
+        subset_loader(train_indices, True),
+        subset_loader(valid_indices, False),
+        scaler,
+        train_indices,
+        valid_indices,
     )
 
 
